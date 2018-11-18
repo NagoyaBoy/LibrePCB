@@ -104,10 +104,18 @@ LibraryOverviewWidget::LibraryOverviewWidget(const Context&          context,
           this, &LibraryOverviewWidget::commitMetadata);
 
   // Set up context menu triggers
+  connect(mUi->lstCmpCat, &QListWidget::customContextMenuRequested, this,
+          &LibraryOverviewWidget::openContextMenuAtPos);
   connect(mUi->lstSym, &QListWidget::customContextMenuRequested, this,
-          &LibraryOverviewWidget::symShowContextMenu);
+          &LibraryOverviewWidget::openContextMenuAtPos);
   connect(mUi->lstCmp, &QListWidget::customContextMenuRequested, this,
-          &LibraryOverviewWidget::cmpShowContextMenu);
+          &LibraryOverviewWidget::openContextMenuAtPos);
+  connect(mUi->lstPkgCat, &QListWidget::customContextMenuRequested, this,
+          &LibraryOverviewWidget::openContextMenuAtPos);
+  connect(mUi->lstPkg, &QListWidget::customContextMenuRequested, this,
+          &LibraryOverviewWidget::openContextMenuAtPos);
+  connect(mUi->lstDev, &QListWidget::customContextMenuRequested, this,
+          &LibraryOverviewWidget::openContextMenuAtPos);
 
   // Load all library elements.
   updateElementLists();
@@ -139,20 +147,6 @@ bool LibraryOverviewWidget::save() noexcept {
     QMessageBox::critical(this, tr("Save failed"), e.getMsg());
     return false;
   }
-}
-
-void LibraryOverviewWidget::symShowContextMenu(const QPoint &pos) noexcept {
-    QPoint globalPos = mUi->lstSym->mapToGlobal(pos);
-    QMenu menu;
-    menu.addAction(QIcon(":/img/actions/delete.png"), tr("Remove"), this, &LibraryOverviewWidget::symRemove);
-    menu.exec(globalPos);
-}
-
-void LibraryOverviewWidget::cmpShowContextMenu(const QPoint &pos) noexcept {
-    QPoint globalPos = mUi->lstCmp->mapToGlobal(pos);
-    QMenu menu;
-    menu.addAction(QIcon(":/img/actions/delete.png"), tr("Remove"), this, &LibraryOverviewWidget::cmpRemove);
-    menu.exec(globalPos);
 }
 
 /*******************************************************************************
@@ -274,6 +268,60 @@ void LibraryOverviewWidget::updateElementList(QListWidget& listWidget,
   }
 }
 
+bool LibraryOverviewWidget::openContextMenuAtPos(const QPoint& pos) noexcept {
+  Q_UNUSED(pos);
+
+  // Build the context menu
+  QMenu    menu;
+  QAction* aRemove = menu.addAction(QIcon(":/img/actions/delete.png"), tr("Remove"));
+
+  // Execute the context menu
+  QAction* action = menu.exec(QCursor::pos());
+  if (action == aRemove) {
+    return removeSelectedItem(sender());
+  } else {
+    return false;
+  }
+}
+
+bool LibraryOverviewWidget::removeSelectedItem(const QObject* sender) noexcept {
+  // Get reference to list widget that triggered the action
+  const QListWidget* list = dynamic_cast<const QListWidget*>(sender);
+  Q_ASSERT(list);
+
+  // Find file path of selected library element
+  QListWidgetItem* selectedItem = list->item(list->currentRow());
+  FilePath fp = selectedItem ? FilePath(selectedItem->data(Qt::UserRole).toString()) : FilePath();
+  if (!fp.isValid()) {
+      return false;
+  }
+
+  int ret = QMessageBox::warning(
+      this, tr("Remove %1").arg("TODO"),
+      QString(tr("WARNING: Library elements must normally NOT be removed "
+                 "because this will break "
+                 "other elements which depend on this one! They should be just "
+                 "marked as "
+                 "deprecated instead.\n\nAre you still sure to delete the "
+                 "whole library element "
+                 "\"%1\"?\n\nThis cannot be undone!"))
+          .arg("TODO"),
+      QMessageBox::Yes, QMessageBox::Cancel);
+  if (ret == QMessageBox::Yes) {
+    try {
+      FileUtils::removeDirRecursively(fp);
+    } catch (const Exception& e) {
+      QMessageBox::critical(this, tr("Error"), e.getMsg());
+      mContext.workspace.getLibraryDb().startLibraryRescan();
+      return false;
+    }
+    mContext.workspace.getLibraryDb().startLibraryRescan();
+    return true;
+  } else {
+    return false;
+  }
+}
+
 /*******************************************************************************
  *  Event Handlers
  ******************************************************************************/
@@ -349,22 +397,6 @@ void LibraryOverviewWidget::lstDevDoubleClicked(
       item ? FilePath(item->data(Qt::UserRole).toString()) : FilePath();
   if (fp.isValid()) {
     emit editDeviceTriggered(fp);
-  }
-}
-
-void LibraryOverviewWidget::symRemove() noexcept {
-  QListWidgetItem* item = mUi->lstSym->item(mUi->lstSym->currentRow());
-  FilePath fp = item ? FilePath(item->data(Qt::UserRole).toString()) : FilePath();
-  if (fp.isValid()) {
-    emit removeSymbolTriggered(fp);
-  }
-}
-
-void LibraryOverviewWidget::cmpRemove() noexcept {
-  QListWidgetItem* item = mUi->lstCmp->item(mUi->lstCmp->currentRow());
-  FilePath fp = item ? FilePath(item->data(Qt::UserRole).toString()) : FilePath();
-  if (fp.isValid()) {
-    emit removeComponentTriggered(fp);
   }
 }
 

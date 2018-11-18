@@ -70,8 +70,6 @@ public:
 
 public slots:
   bool save() noexcept override;
-  void symShowContextMenu(const QPoint&) noexcept;
-  void cmpShowContextMenu(const QPoint&) noexcept;
 
 signals:
   void editComponentCategoryTriggered(const FilePath& fp);
@@ -81,9 +79,6 @@ signals:
   void editComponentTriggered(const FilePath& fp);
   void editDeviceTriggered(const FilePath& fp);
 
-  void removeSymbolTriggered(const FilePath& fp);
-  void removeComponentTriggered(const FilePath& fp);
-
 private:  // Methods
   void    updateMetadata() noexcept;
   QString commitMetadata() noexcept;
@@ -91,6 +86,8 @@ private:  // Methods
   void    updateElementLists() noexcept;
   template <typename ElementType>
   void updateElementList(QListWidget& listWidget, const QIcon& icon) noexcept;
+  bool openContextMenuAtPos(const QPoint& pos) noexcept;
+  bool removeSelectedItem(const QObject* sender) noexcept;
 
   // Event Handlers
   void btnIconClicked() noexcept;
@@ -100,10 +97,6 @@ private:  // Methods
   void lstPkgDoubleClicked(const QModelIndex& index) noexcept;
   void lstCmpDoubleClicked(const QModelIndex& index) noexcept;
   void lstDevDoubleClicked(const QModelIndex& index) noexcept;
-
-  // Remove methods
-  void symRemove() noexcept;
-  void cmpRemove() noexcept;
 
 private:  // Data
   QSharedPointer<Library>                   mLibrary;
