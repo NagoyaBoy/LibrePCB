@@ -87,7 +87,7 @@ private:  // Methods
   template <typename ElementType>
   void updateElementList(QListWidget& listWidget, const QIcon& icon) noexcept;
   bool openContextMenuAtPos(const QPoint& pos) noexcept;
-  bool removeSelectedItem(const QObject* sender) noexcept;
+  bool removeSelectedItem(QObject* sender) noexcept;
 
   // Event Handlers
   void btnIconClicked() noexcept;

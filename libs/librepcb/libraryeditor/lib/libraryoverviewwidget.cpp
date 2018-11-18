@@ -284,13 +284,14 @@ bool LibraryOverviewWidget::openContextMenuAtPos(const QPoint& pos) noexcept {
   }
 }
 
-bool LibraryOverviewWidget::removeSelectedItem(const QObject* sender) noexcept {
+bool LibraryOverviewWidget::removeSelectedItem(QObject* sender) noexcept {
   // Get reference to list widget that triggered the action
-  const QListWidget* list = dynamic_cast<const QListWidget*>(sender);
+  QListWidget* list = dynamic_cast<QListWidget*>(sender);
   Q_ASSERT(list);
 
   // Find file path of selected library element
-  QListWidgetItem* selectedItem = list->item(list->currentRow());
+  int row = list->currentRow();
+  QListWidgetItem* selectedItem = list->item(row);
   FilePath fp = selectedItem ? FilePath(selectedItem->data(Qt::UserRole).toString()) : FilePath();
   if (!fp.isValid()) {
       return false;
@@ -315,6 +316,8 @@ bool LibraryOverviewWidget::removeSelectedItem(const QObject* sender) noexcept {
       mContext.workspace.getLibraryDb().startLibraryRescan();
       return false;
     }
+    QListWidgetItem* removedItem = list->takeItem(row);
+    Q_ASSERT(removedItem == selectedItem);
     mContext.workspace.getLibraryDb().startLibraryRescan();
     return true;
   } else {
