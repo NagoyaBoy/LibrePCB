@@ -297,8 +297,9 @@ bool LibraryOverviewWidget::removeSelectedItem(QObject* sender) noexcept {
       return false;
   }
 
+  const QString itemName = selectedItem->text();
   int ret = QMessageBox::warning(
-      this, tr("Remove %1").arg("TODO"),
+      this, tr("Remove %1").arg(itemName),
       QString(tr("WARNING: Library elements must normally NOT be removed "
                  "because this will break "
                  "other elements which depend on this one! They should be just "
@@ -306,7 +307,7 @@ bool LibraryOverviewWidget::removeSelectedItem(QObject* sender) noexcept {
                  "deprecated instead.\n\nAre you still sure to delete the "
                  "whole library element "
                  "\"%1\"?\n\nThis cannot be undone!"))
-          .arg("TODO"),
+          .arg(itemName),
       QMessageBox::Yes, QMessageBox::Cancel);
   if (ret == QMessageBox::Yes) {
     try {
