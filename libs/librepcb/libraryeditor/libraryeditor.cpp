@@ -245,6 +245,8 @@ LibraryEditor::LibraryEditor(workspace::Workspace&   ws,
           &LibraryEditor::updateTabTitles);
   connect(overviewWidget, &LibraryOverviewWidget::dirtyChanged, this,
           &LibraryEditor::updateTabTitles);
+
+  // Edit element signals
   connect(overviewWidget,
           &LibraryOverviewWidget::editComponentCategoryTriggered, this,
           &LibraryEditor::editComponentCategoryTriggered);
@@ -258,6 +260,13 @@ LibraryEditor::LibraryEditor(workspace::Workspace&   ws,
           &LibraryEditor::editComponentTriggered);
   connect(overviewWidget, &LibraryOverviewWidget::editDeviceTriggered, this,
           &LibraryEditor::editDeviceTriggered);
+
+  // Remove element signals
+  connect(overviewWidget, &LibraryOverviewWidget::removeSymbolTriggered, this,
+          &LibraryEditor::removeSymbolTriggered);
+  connect(overviewWidget, &LibraryOverviewWidget::removeComponentTriggered, this,
+          &LibraryEditor::removeComponentTriggered);
+
   mUi->tabWidget->addTab(overviewWidget, overviewWidget->windowIcon(),
                          overviewWidget->windowTitle());
   setActiveEditorWidget(overviewWidget);
@@ -475,6 +484,36 @@ void LibraryEditor::editLibraryElementTriggered(const FilePath& fp,
     mUi->tabWidget->setCurrentIndex(index);
   } catch (const Exception& e) {
     QMessageBox::critical(this, tr("Failed to open category"), e.getMsg());
+  }
+}
+
+void LibraryEditor::removeSymbolTriggered(const FilePath& fp) noexcept {
+  removeLibraryElementTriggered("Symbol", fp);
+}
+
+void LibraryEditor::removeComponentTriggered(const FilePath& fp) noexcept {
+  removeLibraryElementTriggered("Component", fp);
+}
+
+void LibraryEditor::removeLibraryElementTriggered(const QString& elementType, const FilePath& fp) noexcept {
+  int ret = QMessageBox::warning(
+      this, tr("Remove %1").arg(elementType),
+      QString(tr("WARNING: Library elements must normally NOT be removed "
+                 "because this will break "
+                 "other elements which depend on this one! They should be just "
+                 "marked as "
+                 "deprecated instead.\n\nAre you still sure to delete the "
+                 "whole library element "
+                 "\"%1\"?\n\nThis cannot be undone!"))
+          .arg("TODO"),
+      QMessageBox::Yes, QMessageBox::Cancel);
+  if (ret == QMessageBox::Yes) {
+    try {
+      FileUtils::removeDirRecursively(fp);
+    } catch (const Exception& e) {
+      QMessageBox::critical(this, tr("Error"), e.getMsg());
+    }
+    mWorkspace.getLibraryDb().startLibraryRescan();
   }
 }
 

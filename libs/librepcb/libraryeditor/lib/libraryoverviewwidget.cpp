@@ -103,6 +103,12 @@ LibraryOverviewWidget::LibraryOverviewWidget(const Context&          context,
   connect(mDependenciesEditorWidget.data(), &LibraryListEditorWidget::edited,
           this, &LibraryOverviewWidget::commitMetadata);
 
+  // Set up context menu triggers
+  connect(mUi->lstSym, &QListWidget::customContextMenuRequested, this,
+          &LibraryOverviewWidget::symShowContextMenu);
+  connect(mUi->lstCmp, &QListWidget::customContextMenuRequested, this,
+          &LibraryOverviewWidget::cmpShowContextMenu);
+
   // Load all library elements.
   updateElementLists();
   connect(&mContext.workspace.getLibraryDb(),
@@ -133,6 +139,20 @@ bool LibraryOverviewWidget::save() noexcept {
     QMessageBox::critical(this, tr("Save failed"), e.getMsg());
     return false;
   }
+}
+
+void LibraryOverviewWidget::symShowContextMenu(const QPoint &pos) noexcept {
+    QPoint globalPos = mUi->lstSym->mapToGlobal(pos);
+    QMenu menu;
+    menu.addAction(QIcon(":/img/actions/delete.png"), tr("Remove"), this, &LibraryOverviewWidget::symRemove);
+    menu.exec(globalPos);
+}
+
+void LibraryOverviewWidget::cmpShowContextMenu(const QPoint &pos) noexcept {
+    QPoint globalPos = mUi->lstCmp->mapToGlobal(pos);
+    QMenu menu;
+    menu.addAction(QIcon(":/img/actions/delete.png"), tr("Remove"), this, &LibraryOverviewWidget::cmpRemove);
+    menu.exec(globalPos);
 }
 
 /*******************************************************************************
@@ -329,6 +349,22 @@ void LibraryOverviewWidget::lstDevDoubleClicked(
       item ? FilePath(item->data(Qt::UserRole).toString()) : FilePath();
   if (fp.isValid()) {
     emit editDeviceTriggered(fp);
+  }
+}
+
+void LibraryOverviewWidget::symRemove() noexcept {
+  QListWidgetItem* item = mUi->lstSym->item(mUi->lstSym->currentRow());
+  FilePath fp = item ? FilePath(item->data(Qt::UserRole).toString()) : FilePath();
+  if (fp.isValid()) {
+    emit removeSymbolTriggered(fp);
+  }
+}
+
+void LibraryOverviewWidget::cmpRemove() noexcept {
+  QListWidgetItem* item = mUi->lstCmp->item(mUi->lstCmp->currentRow());
+  FilePath fp = item ? FilePath(item->data(Qt::UserRole).toString()) : FilePath();
+  if (fp.isValid()) {
+    emit removeComponentTriggered(fp);
   }
 }
 

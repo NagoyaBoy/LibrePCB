@@ -139,6 +139,7 @@ private:  // GUI Event Handlers
   void zoomOutTriggered() noexcept;
   void zoomAllTriggered() noexcept;
   void editGridPropertiesTriggered() noexcept;
+
   void editComponentCategoryTriggered(const FilePath& fp) noexcept;
   void editPackageCategoryTriggered(const FilePath& fp) noexcept;
   void editSymbolTriggered(const FilePath& fp) noexcept;
@@ -148,6 +149,11 @@ private:  // GUI Event Handlers
   template <typename ElementType, typename EditWidgetType>
   void editLibraryElementTriggered(const FilePath& fp,
                                    bool            isNewElement) noexcept;
+
+  void removeSymbolTriggered(const FilePath& fp) noexcept;
+  void removeComponentTriggered(const FilePath& fp) noexcept;
+  void removeLibraryElementTriggered(const QString& elementType, const FilePath& fp) noexcept;
+
   void currentTabChanged(int index) noexcept;
   bool tabCloseRequested(int index) noexcept;
   void cursorPositionChanged(const Point& pos) noexcept;
