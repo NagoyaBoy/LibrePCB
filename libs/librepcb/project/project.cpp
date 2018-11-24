@@ -39,6 +39,7 @@
 #include <librepcb/common/fileio/smartsexprfile.h>
 #include <librepcb/common/fileio/smarttextfile.h>
 #include <librepcb/common/fileio/smartversionfile.h>
+#include <librepcb/common/fileio/transactionalfilesystem.h>
 #include <librepcb/common/font/strokefontpool.h>
 
 #include <QPrinter>
@@ -192,17 +193,21 @@ Project::Project(const FilePath& filepath, bool create, bool readOnly,
   // allocated memory will be freed. Then the exception is rethrown to leave the
   // constructor.
 
+  mFileSystem.reset(new TransactionalFileSystem(this));
+  mFileSystem->loadFromDirectory(mPath);
+
   try {
     // try to create/open the version file
-    FilePath versionFilePath = mPath.getPathTo(".librepcb-project");
+    // FilePath versionFilePath = mPath.getPathTo(".librepcb-project");
     if (create) {
-      mVersionFile.reset(SmartVersionFile::create(
-          versionFilePath, qApp->getFileFormatVersion()));
+      // mVersionFile.reset(SmartVersionFile::create(
+      //    versionFilePath, qApp->getFileFormatVersion()));
     } else {
-      mVersionFile.reset(
-          new SmartVersionFile(versionFilePath, mIsRestored, mIsReadOnly));
-      // the version check was already done above, so we can use an assert here
-      Q_ASSERT(mVersionFile->getVersion() <= qApp->getFileFormatVersion());
+      // mVersionFile.reset(
+      //    new SmartVersionFile(versionFilePath, mIsRestored, mIsReadOnly));
+      //// the version check was already done above, so we can use an assert
+      ///here
+      // Q_ASSERT(mVersionFile->getVersion() <= qApp->getFileFormatVersion());
     }
 
     // migrate project directory structure
@@ -298,10 +303,10 @@ Project::Project(const FilePath& filepath, bool create, bool readOnly,
 
     // try to create/open the project file
     if (create) {
-      mProjectFile.reset(SmartTextFile::create(mFilepath));
+      // mProjectFile.reset(SmartTextFile::create(mFilepath));
     } else {
-      mProjectFile.reset(
-          new SmartTextFile(mFilepath, mIsRestored, mIsReadOnly));
+      // mProjectFile.reset(
+      //    new SmartTextFile(mFilepath, mIsRestored, mIsReadOnly));
     }
 
     // copy and/or load stroke fonts
@@ -789,7 +794,8 @@ bool Project::save(bool toOriginal, QStringList& errors) noexcept {
 
   // Save version file
   try {
-    mVersionFile->save(toOriginal);
+    // mVersionFile->save(toOriginal);
+    mFileSystem->write(".librepcb-project", "0.1\n");
   } catch (Exception& e) {
     success = false;
     errors.append(e.getMsg());
@@ -797,8 +803,9 @@ bool Project::save(bool toOriginal, QStringList& errors) noexcept {
 
   // Save *.lpp project file
   try {
-    mProjectFile->setContent("LIBREPCB-PROJECT");
-    mProjectFile->save(toOriginal);
+    // mProjectFile->setContent("LIBREPCB-PROJECT");
+    // mProjectFile->save(toOriginal);
+    mFileSystem->write(mFilepath.getFilename(), "LIBREPCB-PROJECT");
   } catch (const Exception& e) {
     success = false;
     errors.append(e.getMsg());
@@ -861,6 +868,14 @@ bool Project::save(bool toOriginal, QStringList& errors) noexcept {
 
   // Save ERC messages list
   if (!mErcMsgList->save(toOriginal, errors)) success = false;
+
+  // Save whole project file system
+  try {
+    mFileSystem->saveToZip(mPath.getPathTo("FOOBAR.zip"));
+  } catch (const Exception& e) {
+    success = false;
+    errors.append(e.getMsg());
+  }
 
   // if the project was restored from a backup, reset the mIsRestored flag as
   // the current state of the project is no longer a restored backup but a

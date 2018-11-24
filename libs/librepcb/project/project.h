@@ -40,6 +40,7 @@ class QPrinter;
 
 namespace librepcb {
 
+class TransactionalFileSystem;
 class SmartTextFile;
 class SmartSExprFile;
 class SmartVersionFile;
@@ -494,9 +495,7 @@ private:
   // Project File (*.lpp)
   FilePath mPath;      ///< the path to the project directory
   FilePath mFilepath;  ///< the filepath of the *.lpp project file
-  QScopedPointer<SmartVersionFile>
-                                mVersionFile;  ///< the ".librepcb-project" file
-  QScopedPointer<SmartTextFile> mProjectFile;  ///< the *.lpp project file
+  QScopedPointer<TransactionalFileSystem> mFileSystem;
   DirectoryLock mLock;  ///< Lock for the whole project directory (see @ref
                         ///< doc_project_lock)
   bool mIsRestored;  ///< the constructor will set this to true if the project
